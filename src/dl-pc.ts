@@ -4,7 +4,7 @@ import { loadOrDL } from "./lib/dl";
 import * as mkdirp from "mkdirp";
 import * as path from "path";
 
-async function main() {
+export default async function downloadPlanComMinutes() {
   const outDir = `data/dl-pc/`;
   mkdirp.sync(outDir);
 
@@ -32,6 +32,9 @@ async function main() {
     if (minutesUrl === "") {
       continue;
     }
+    if (!path.basename(minutesUrl).startsWith("20")) {
+      break;
+    }
 
     try {
       const pdfName = path.basename(minutesUrl);
@@ -42,7 +45,3 @@ async function main() {
     }
   }
 }
-
-main()
-  .then(() => console.log("Done"))
-  .catch((e) => console.error(e));

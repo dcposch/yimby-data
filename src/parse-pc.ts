@@ -2,9 +2,13 @@ import * as pdf from "pdf-parse";
 import * as fs from "fs";
 import * as path from "path";
 import { openDB, wait } from "./lib/db";
+import * as mkdirp from "mkdirp";
 
-async function main() {
-  const dbPath = "data/planning-cases.sqlite3";
+export default async function parsePc() {
+  const outDir = "data/parse-pc";
+  mkdirp.sync(outDir);
+
+  const dbPath = path.join(outDir, "out.sqlite");
   fs.rmSync(dbPath, { force: true });
   const db = openDB(dbPath);
 
@@ -170,7 +174,3 @@ function cleanItem(raw: RawItem): Item {
     body: raw.body,
   };
 }
-
-main()
-  .then(() => console.log("Done"))
-  .catch((e) => console.error(e));
