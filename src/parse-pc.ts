@@ -3,6 +3,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { openDB, wait } from "./lib/db";
 import * as mkdirp from "mkdirp";
+import { setTimeout } from "timers/promises";
 
 export default async function parsePc() {
   const outDir = "data/parse-pc";
@@ -67,7 +68,10 @@ VALUES            (        ?,       ?,      ?,        ?,       ?,        ?,    ?
     }
   }
 
+  await wait(db);
   db.close();
+
+  await setTimeout(5000);
 }
 
 interface RawItem {
