@@ -11,7 +11,10 @@
   },
   "private": true,
   "scripts": {
-    "start": "wrangler dev",
+    "start": "wrangler dev --local --persist",
     "deploy": "wrangler publish"
+  },
+  "dependencies": {
+    "itty-router": "^2.6.6"
   }
 }
