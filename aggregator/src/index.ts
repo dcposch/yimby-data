@@ -4,8 +4,8 @@ import exportProjects from "./export-projects";
 import parsePlanComMinutes from "./parse-pc";
 
 async function main() {
-  await downloadPlanComMinutes();
-  await parsePlanComMinutes();
+  // await downloadPlanComMinutes();
+  // await parsePlanComMinutes();
   await downloadPermitData();
   await exportProjects();
 }

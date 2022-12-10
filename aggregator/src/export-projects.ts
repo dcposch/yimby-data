@@ -1,6 +1,7 @@
 import { openDB } from "./lib/db";
 import { setTimeout } from "timers/promises";
 import { execSync } from "child_process";
+import * as fs from "fs";
 
 export default async function exportProjects() {
   const dbPath = "data/sf-planning.sqlite";
@@ -74,6 +75,16 @@ export default async function exportProjects() {
         substring(cua.close_date, 1, 10) as CUA_CLOSE,
         substring(cua.record_type, 1, 18) as CUA_TYPE
     `;
+    db.exec(`DROP VIEW IF EXISTS proj_all`);
+    db.exec(`CREATE VIEW proj_all AS
+        ${selCols}
+        FROM proj_id
+        INNER JOIN permit prj on prj.record_id = (id || 'PRJ')
+        LEFT JOIN permit eea on eea.record_id = (id || 'EEA')
+        LEFT JOIN permit env on env.record_id = (id || 'ENV')
+        LEFT JOIN permit eec on eec.record_id = (id || 'EEC')
+        LEFT JOIN permit cua on cua.record_id = (id || 'CUA')
+    `);
     db.exec(`DROP VIEW IF EXISTS proj_env_review`);
     db.exec(`CREATE VIEW proj_env_review AS
         ${selCols}
@@ -104,6 +115,54 @@ export default async function exportProjects() {
         LEFT JOIN permit env on env.record_id = (id || 'ENV')
         LEFT JOIN permit eec on eec.record_id = (id || 'EEC')
     `);
+
+    db.exec(`DROP TABLE IF EXISTS projects`);
+    db.exec(`CREATE TABLE projects (
+      ID TEXT NOT NULL PRIMARY KEY,
+      NAME TEXT,
+      ADDR TEXT,
+
+      PRJ_ID TEXT,
+      PRJ_TYPE TEXT,
+      PRJ_STAT TEXT,
+      PRJ_OPEN TEXT,
+      PRJ_CLOSE TEXT,
+      N_UNITS INT,
+      DEV_NAME TEXT,
+      DEV_ORG TEXT,
+      DT_APP_SUBMITTED TEXT,
+      DT_APP_ACCEPTED TEXT,
+      DT_PLAN_CHECK TEXT,
+      DT_PROJ_DESC_STABLE TEXT,
+      DT_FIN_HEAR TEXT,
+      PRJ_DESC TEXT,
+      PRJ_CLASS TEXT,
+
+      EEA_ID TEXT,
+      EEA_STAT TEXT,
+      EEA_OPEN TEXT,
+      EEA_CLOSE TEXT,
+      EEA_TYPE TEXT,
+
+      ENV_ID TEXT,
+      ENV_STAT TEXT,
+      ENV_OPEN TEXT,
+      ENV_CLOSE TEXT,
+      ENV_TYPE TEXT,
+
+      EEC_ID TEXT,
+      EEC_STAT TEXT,
+      EEC_OPEN TEXT,
+      EEC_CLOSE TEXT,
+      EEC_TYPE TEXT,
+
+      CUA_ID TEXT,
+      CUA_STAT TEXT,
+      CUA_OPEN TEXT,
+      CUA_CLOSE TEXT,
+      CUA_TYPE TEXT
+    );`);
+    db.exec("INSERT OR IGNORE INTO projects SELECT * from proj_all");
   });
   db.close();
   await setTimeout(5000);
@@ -116,11 +175,27 @@ export default async function exportProjects() {
       `'SELECT * FROM proj_env_review'`,
       `'.output data/proj-env-exempt.csv'`,
       `'SELECT * FROM proj_env_exempt'`,
-      `'.output data/proj_cua.csv'`,
+      `'.output data/proj-cua.csv'`,
       `'SELECT * FROM proj_cua'`,
       `'.output data/meeting_item.csv'`,
       `'SELECT i.* FROM items i inner join proj_env_review p on i.caseId like (p.id || "%") order by meetingId, caseId;'`,
     ].join(" ")
   );
-  console.log(`Wrote csvs`);
+  console.log(`Wrote CSVs`);
+
+  console.log(`Exporting SQL...`);
+  const sqlPath = "data/projects.sql";
+  execSync(`sqlite3 ${dbPath} -cmd '.output ${sqlPath}' '.dump projects'`);
+  const text = fs.readFileSync(sqlPath, "utf8");
+  const lines = text.split("\n");
+  const newText = lines
+    .filter((l) => !l.startsWith("PRAGMA"))
+    .filter((l) => !l.startsWith("BEGIN TRANSACTION"))
+    .filter((l) => !l.startsWith("COMMIT"))
+    .map((l) => l.replace(/;(?!$)/g, ":"))
+    .join("\n");
+  fs.writeFileSync(sqlPath, newText);
+  console.log("Wrote SQL");
+
+  console.log("");
 }

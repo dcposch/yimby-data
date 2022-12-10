@@ -1,0 +1,9 @@
+name = "worker"
+main = "src/index.ts"
+compatibility_date = "2022-12-09"
+
+[[ d1_databases ]]
+binding = "DB"
+database_name = "sfyimby"
+database_id = "64f7faf6-1d33-44b7-b757-333805389ecd"
+preview_database_id = "64f7faf6-1d33-44b7-b757-333805389ecd"
